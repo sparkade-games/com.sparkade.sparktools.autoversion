@@ -12,30 +12,46 @@
     {
         private static string prevVersion = null;
 
+        /// <summary>
+        /// Gets a value indicating whether the version has been set.
+        /// </summary>
+        public static bool VersionSet => prevVersion != null;
+
         /// <inheritdoc/>
         public int callbackOrder => 0;
 
         /// <summary>
         /// Sets the build version to a version derived from the git repo the project is located in.
         /// </summary>
-        public static void SetBuildVersion()
+        public static void SetVersion()
         {
-            prevVersion = PlayerSettings.bundleVersion;
-            string buildVersion = GetGitVersion();
-            PlayerSettings.bundleVersion = buildVersion;
-            Debug.Log($"Build version set to '{buildVersion}'.");
+            if (!VersionSet)
+            {
+                prevVersion = PlayerSettings.bundleVersion;
+                string buildVersion = GetGitVersion();
+                PlayerSettings.bundleVersion = buildVersion;
+                Debug.Log($"Build version set to '{buildVersion}'.");
+            }
+            else
+            {
+                Debug.LogError("Build version is already set.");
+            }
         }
 
         /// <summary>
         /// Resets the version to what it was before SetBuildVersion was last called.
         /// </summary>
-        public static void ResetEditorVersion()
+        public static void ResetVersion()
         {
-            if (prevVersion != null)
+            if (VersionSet)
             {
                 PlayerSettings.bundleVersion = prevVersion;
                 prevVersion = null;
                 AssetDatabase.SaveAssets();
+            }
+            else
+            {
+                Debug.LogError("Build version has not been set.");
             }
         }
 
@@ -79,7 +95,7 @@
         public void OnPreprocessBuild(BuildReport buildReport = default)
         {
             Application.logMessageReceived += this.OnBuildError;
-            SetBuildVersion();
+            SetVersion();
         }
 
         /// <summary>
@@ -89,7 +105,7 @@
         public void OnPostprocessBuild(BuildReport buildReport = default)
         {
             Application.logMessageReceived -= this.OnBuildError;
-            ResetEditorVersion();
+            ResetVersion();
         }
 
         private void OnBuildError(string condition, string stacktrace, LogType type)
