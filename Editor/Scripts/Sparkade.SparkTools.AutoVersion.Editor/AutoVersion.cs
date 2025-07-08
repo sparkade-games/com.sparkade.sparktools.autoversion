@@ -10,13 +10,6 @@
     /// </summary>
     public class AutoVersion : IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
-        private static string prevVersion = null;
-
-        /// <summary>
-        /// Gets a value indicating whether the version has been set.
-        /// </summary>
-        public static bool VersionSet => prevVersion != null;
-
         /// <inheritdoc/>
         public int callbackOrder => 0;
 
@@ -25,34 +18,7 @@
         /// </summary>
         public static void SetVersion()
         {
-            if (!VersionSet)
-            {
-                prevVersion = PlayerSettings.bundleVersion;
-                string buildVersion = GetGitVersion();
-                PlayerSettings.bundleVersion = buildVersion;
-                Debug.Log($"Build version set to '{buildVersion}'.");
-            }
-            else
-            {
-                Debug.LogError("Build version is already set.");
-            }
-        }
-
-        /// <summary>
-        /// Resets the version to what it was before SetBuildVersion was last called.
-        /// </summary>
-        public static void ResetVersion()
-        {
-            if (VersionSet)
-            {
-                PlayerSettings.bundleVersion = prevVersion;
-                prevVersion = null;
-                AssetDatabase.SaveAssets();
-            }
-            else
-            {
-                Debug.LogError("Build version has not been set.");
-            }
+            PlayerSettings.bundleVersion = GetGitVersion();
         }
 
         /// <summary>
@@ -94,7 +60,6 @@
         /// <param name="buildReport">This parameter is unused and should be ignored.</param>
         public void OnPreprocessBuild(BuildReport buildReport = default)
         {
-            Application.logMessageReceived += this.OnBuildError;
             SetVersion();
         }
 
@@ -104,16 +69,12 @@
         /// <param name="buildReport">This parameter is unused and should be ignored.</param>
         public void OnPostprocessBuild(BuildReport buildReport = default)
         {
-            Application.logMessageReceived -= this.OnBuildError;
-            ResetVersion();
         }
 
-        private void OnBuildError(string condition, string stacktrace, LogType type)
+        [InitializeOnLoadMethod]
+        private static void OnPlayModeStateChanged()
         {
-            if (BuildPipeline.isBuildingPlayer && type == LogType.Error)
-            {
-                this.OnPostprocessBuild();
-            }
+            SetVersion();
         }
     }
 }
