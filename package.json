@@ -1,10 +1,10 @@
 {
   "name": "com.sparkade.sparktools.autoversion",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "displayName": "SparkTools: AutoVersion",
   "description": "Automatically injects git versioning into builds.",
-  "unity": "2020.2",
-  "unityRelease": "0f1",
+  "unity": "6000.1",
+  "unityRelease": "10f1",
   "keywords": [
     "sparktools"
   ],
