@@ -1,6 +1,6 @@
 {
   "name": "com.sparkade.sparktools.autoversion",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "displayName": "SparkTools: AutoVersion",
   "description": "Automatically injects git versioning into builds.",
   "unity": "6000.1",
