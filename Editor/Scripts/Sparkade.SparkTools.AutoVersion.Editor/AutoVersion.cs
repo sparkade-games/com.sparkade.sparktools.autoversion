@@ -1,4 +1,4 @@
-﻿namespace Sparkade.SparkTools.AutoVersion.Editor
+﻿﻿namespace Sparkade.SparkTools.AutoVersion.Editor
 {
     using UnityEditor;
     using UnityEditor.Build;
@@ -10,6 +10,13 @@
     /// </summary>
     public class AutoVersion : IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
+        private static string prevVersion = null;
+
+        /// <summary>
+        /// Gets a value indicating whether the version has been set.
+        /// </summary>
+        public static bool VersionSet => prevVersion != null;
+
         /// <inheritdoc/>
         public int callbackOrder => 0;
 
@@ -18,7 +25,34 @@
         /// </summary>
         public static void SetVersion()
         {
-            PlayerSettings.bundleVersion = GetGitVersion();
+            if (!VersionSet)
+            {
+                prevVersion = PlayerSettings.bundleVersion;
+                string buildVersion = GetGitVersion();
+                PlayerSettings.bundleVersion = buildVersion;
+                Debug.Log($"Build version set to '{buildVersion}'.");
+            }
+            else
+            {
+                Debug.LogError("Build version is already set.");
+            }
+        }
+
+        /// <summary>
+        /// Resets the version to what it was before SetBuildVersion was last called.
+        /// </summary>
+        public static void ResetVersion()
+        {
+            if (VersionSet)
+            {
+                PlayerSettings.bundleVersion = prevVersion;
+                prevVersion = null;
+                AssetDatabase.SaveAssets();
+            }
+            else
+            {
+                Debug.LogError("Build version has not been set.");
+            }
         }
 
         /// <summary>
@@ -54,27 +88,26 @@
             return result;
         }
 
-        /// <summary>
-        /// Stamps the build with a version.
-        /// </summary>
-        /// <param name="buildReport">This parameter is unused and should be ignored.</param>
+        /// <inheritdoc/>
         public void OnPreprocessBuild(BuildReport buildReport = default)
         {
+            Application.logMessageReceived += this.OnBuildError;
             SetVersion();
         }
 
-        /// <summary>
-        /// Resets the version for the Editor.
-        /// </summary>
-        /// <param name="buildReport">This parameter is unused and should be ignored.</param>
+        /// <inheritdoc/>
         public void OnPostprocessBuild(BuildReport buildReport = default)
         {
+            Application.logMessageReceived -= this.OnBuildError;
+            ResetVersion();
         }
 
-        [InitializeOnLoadMethod]
-        private static void OnPlayModeStateChanged()
+        private void OnBuildError(string condition, string stacktrace, LogType type)
         {
-            SetVersion();
+            if (BuildPipeline.isBuildingPlayer && type == LogType.Error)
+            {
+                this.OnPostprocessBuild();
+            }
         }
     }
 }
